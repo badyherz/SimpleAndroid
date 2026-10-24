@@ -1,0 +1,79 @@
+name: ERICards Collector
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "ERICards_Collector/**"
+      - ".github/workflows/ericards-collector.yml"
+    tags:
+      - "ericards-v*"
+  pull_request:
+    paths:
+      - "ERICards_Collector/**"
+  workflow_dispatch:
+
+defaults:
+  run:
+    working-directory: ERICards_Collector
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # needed to attach the APK to a release
+    env:
+      # Optional signing secrets (see ERICards_Collector/README.md). Without them a debug APK is built.
+      KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+      KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+      KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+      KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      - name: Make the Gradle wrapper executable
+        run: chmod +x ./gradlew
+
+      - name: Run unit tests
+        run: ./gradlew testDebugUnitTest
+
+      - name: Decode the signing key
+        if: env.KEYSTORE_BASE64 != ''
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/release.jks"
+          echo "KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+
+      - name: Build the signed release APK
+        if: env.KEYSTORE_BASE64 != ''
+        run: ./gradlew assembleRelease
+
+      - name: Build a debug APK (no signing key configured)
+        if: env.KEYSTORE_BASE64 == ''
+        run: ./gradlew assembleDebug
+
+      - name: Name the APK
+        run: |
+          mkdir -p dist
+          if [ -n "$KEYSTORE_BASE64" ]; then
+            cp app/build/outputs/apk/release/*.apk "dist/ERICards-Collector-${GITHUB_REF_NAME//\//-}.apk"
+          else
+            cp app/build/outputs/apk/debug/*.apk "dist/ERICards-Collector-${GITHUB_REF_NAME//\//-}-debug.apk"
+          fi
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ERICards-Collector-apk
+          path: ERICards_Collector/dist/*.apk
+
+      - name: Attach the APK to the release
+        if: startsWith(github.ref, 'refs/tags/ericards-v') && env.KEYSTORE_BASE64 != ''
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ERICards_Collector/dist/*.apk

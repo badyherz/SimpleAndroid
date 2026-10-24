@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android's automatic backup (Google account) and device-to-device transfer keep the collection,
+     the database and the settings. Backup copies made by the app itself are not included. -->
+<data-extraction-rules>
+    <cloud-backup>
+        <include domain="file" path="ERICardsCollector" />
+        <exclude domain="file" path="ERICardsCollector/backups" />
+    </cloud-backup>
+    <device-transfer>
+        <include domain="file" path="ERICardsCollector" />
+        <exclude domain="file" path="ERICardsCollector/backups" />
+    </device-transfer>
+</data-extraction-rules>
