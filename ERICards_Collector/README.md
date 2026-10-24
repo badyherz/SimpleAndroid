@@ -59,3 +59,7 @@ I am not affiliated, associated, authorized, endorsed by, or in any way official
 The name European Chemical Industry Council as well as related names, marks, emblems and images are registered trademarks of their respective owners.
 
 All information that is found in the database files can be found at https://www.ericards.net/
+
+## License
+
+Free software under the GNU General Public License v3.0. See [LICENSE](../LICENSE).

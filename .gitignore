@@ -8,6 +8,9 @@ captures/
 .externalNativeBuild/
 .cxx/
 
+# Output of the release workflow
+dist/
+
 # Signing keys must never be committed
 *.jks
 *.keystore
